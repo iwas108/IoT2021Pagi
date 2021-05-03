@@ -54,6 +54,6 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  getAmbientTemperature();
+  float suhu = getAmbientTemperature();
   delay(3000);
 }
