@@ -71,6 +71,25 @@ void messageReceived(String &topic, String &payload)
   }
 }
 
+void iotConnect()
+{
+  Serial.print("Checking WiFi");
+  while(WiFi.status() != WL_CONNECTED) 
+  {
+    Serial.print(".");
+    delay(1000);
+  }
+  Serial.println("");
+
+  Serial.print("Connecting to IoT Broker");
+  while(!iot.connect("ESP32", "public", "public")) 
+  {
+    Serial.print(".");
+    delay(1000);
+  }
+  Serial.println("");
+  Serial.println("IoT broker connected successfully.");
+}
 
 void setup() {
   Serial.begin(115200);
@@ -93,26 +112,28 @@ void setup() {
 
   iot.begin(IOTBROKER, net);
   iot.onMessage(messageReceived);
-
-  Serial.print("Connecting to IoT Broker");
-  while(!iot.connect("ESP32", "public", "public")) 
-  {
-    Serial.print(".");
-    delay(1000);
-  }
-  Serial.println("");
-  Serial.println("IoT broker connected successfully.");
-
+  iotConnect();
   iot.subscribe("undiknas/ti/kelompok0/relay");
   iot.subscribe("undiknas/ti/+/chatroom");
 }
 
 unsigned long intervalCounterRelay = 0;
 unsigned long intervalCounterSensor = 0;
+unsigned long intervalCounterIoTConnect = 0;
 void loop() {
-  // put your main code here, to run repeatedly:
   unsigned long now = millis();
-    
+  // put your main code here, to run repeatedly:
+  if((now - intervalCounterIoTConnect) > 10000)
+  {
+    {
+      if(!iot.connected())
+      {
+        iotConnect(); 
+      }
+      intervalCounterIoTConnect = now;
+    }
+  }
+
   if( (now - intervalCounterRelay) > 1000)
   {
     intervalCounterRelay = now;
@@ -127,7 +148,7 @@ void loop() {
 
     float suhu = getAmbientTemperature();
     iot.publish("undiknas/ti/kelompok0/sensor/suhu", String(suhu));
-  }
+  } 
   
   iot.loop();
 }
